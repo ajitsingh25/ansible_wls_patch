@@ -1,0 +1,101 @@
+---
+
+- name: Create Patch directory
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  file:
+    path: "{{ patch_directory }}"
+    state: directory
+    owner: "{{ oracle_user }}"
+    group: "{{ oracle_group }}"
+
+- name: copy psu patch file 
+  sudo: true
+  sudo_user: "{{ oracle_user }}"
+  copy:
+    src: "{{ oracle_stage_base }}/{{ oracle_version }}/{{ patch_name }}/{{ quarterly_patches[oracle_version][patch_name].filename }}"
+    dest: "{{ oracle_stage_install }}"
+  #with_items: "{{ quarterly_patches[oracle_version][patch_name].filename }}"
+
+- name: copy one-off patch file
+  sudo: true
+  sudo_user: "{{ oracle_user }}"
+  copy:
+    src: "{{ oracle_stage_base }}/{{ oracle_version }}/{{ patch_name }}//{{ item.filename }}"
+    dest: "{{ oracle_stage_install }}"
+  with_items: "{{ oneoff_patches[oracle_version]|default([]) }}"
+  when: not rollback_psu
+
+- name: Check for PSU zip file
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  stat:
+    path: "{{ oracle_stage_install }}/{{ quarterly_patches[oracle_version][patch_name].filename }}"
+    get_checksum: false
+    get_md5: false
+  register: psu_patch_st
+  failed_when: "not {{ psu_patch_st.stat.exists }}"
+  when: not rollback_psu
+
+- name: Check for one-off zip file
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  stat:
+    path: "{{ oracle_stage_install }}/{{ item.filename }}"
+    get_checksum: false
+    get_md5: false
+  register: patch_st
+  failed_when: "not {{ patch_st.stat.exists }}"
+  with_items: "{{ oneoff_patches[oracle_version]|default([]) }}"
+  when: not rollback_psu
+
+- name: Check PSU zip file for Rollback
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  stat:
+    path: "{{ oracle_stage_install }}/{{ quarterly_patches[oracle_version][patch_name].filename }}"
+    get_checksum: false
+    get_md5: false
+  register: psu_patch_st
+  failed_when: "not {{ psu_patch_st.stat.exists }}"
+  when: rollback_psu
+
+- name: Unzip Quarterly Patch
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  unarchive:
+    src: "{{ oracle_stage_install }}/{{ quarterly_patches[oracle_version][patch_name].filename }}"
+    dest: "{{ patch_directory}}/"
+    copy: no
+    creates: "{{ patch_directory }}/{{ quarterly_patches[oracle_version][patch_name].patchid }}/"
+    owner: "{{ oracle_user }}"
+    group: "{{ oracle_group }}"
+  when: not rollback_psu
+
+- name: Unzip One-Off Patch
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  unarchive:
+    src: "{{ oracle_stage_install }}/{{ item.filename }}"
+    dest: "{{ patch_directory}}/"
+    copy: no
+    creates: "{{ patch_directory }}/{{ item.filename }}/"
+    owner: "{{ oracle_user }}"
+    group: "{{ oracle_group }}"
+  with_items: "{{ oneoff_patches[oracle_version]|default([]) }}"
+  when: not rollback_psu
+
+
+- name: Unzip Quarterly Patch for rollback
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  unarchive:
+    src: "{{ oracle_stage_install }}/{{ quarterly_patches[oracle_version][patch_name].filename }}"
+    dest: "{{ patch_directory}}/"
+    copy: no
+    creates: "{{ patch_directory }}/{{ quarterly_patches[oracle_version][patch_name].patchid }}/"
+    owner: "{{ oracle_user }}"
+    group: "{{ oracle_group }}"
+  when: rollback_psu
+
+

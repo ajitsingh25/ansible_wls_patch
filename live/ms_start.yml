@@ -1,0 +1,5 @@
+---
+- hosts: ~(ADMIN)
+
+  roles:
+     - {role: "{{playbook_dir}}/roles/ms_start", work_env: "live", MS_GROUP: "MS", tags: ['ms_start_role']}

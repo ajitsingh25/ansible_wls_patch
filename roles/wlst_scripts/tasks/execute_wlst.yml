@@ -1,0 +1,70 @@
+---
+
+- name: Create WLST directory
+  sudo: true
+  sudo_user: "{{ oracle_user }}"
+  file:
+    path: "{{ wlst_directory }}"
+    state: directory
+    owner: "{{ oracle_user }}"
+    group: "{{ oracle_group }}"
+
+- name: Template WLST Script to get JVMs Per Host
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  template:
+    src: getJvmPerMachine.j2
+    dest: "{{ wlst_directory }}/getJvmPerMachine.py"
+    owner: "{{ oracle_user }}"
+    group: "{{ oracle_group }}"
+    mode: 0644
+  register: wlst_script_created
+
+- debug: var=wlst_script_created
+  tags: debug
+
+- name: Set StageDir Variables
+  shell: grep -w "stage:" {{syshiera}}| awk -F':' '{print $2}' | awk '{$1=$1};1'
+  register: stage_dir
+
+- debug: var=stage_dir.stdout
+  tags: debug
+
+- name: set StageDir Variables for stage
+  set_fact:
+    my_stage_dir: "{{ansible_hostname|upper}}"
+  when: stage_dir.stdout | search("stage")
+
+- debug: var=my_stage_dir
+  tags: debug
+
+- name: set StageDir Variables for stage
+  set_fact:
+    my_stage_dir: "{{stage_dir.stdout|upper}}"
+  when: stage_dir.stdout | search("live")
+
+- debug: var=my_stage_dir
+  tags: debug
+
+- set_fact:
+    ARGS: "-Dweblogic.management.confirmKeyfileCreation=true -Dweblogic.security.SSL.enableJSSE=true -Dweblogic.security.SSL.ignoreHostnameVerification=true -Dweblogic.security.CustomTrustKeyStoreType=JKS -Dweblogic.security.TrustKeyStore=CustomTrust -Dweblogic.security.CustomTrustKeyStoreFileName=/x/web/{{my_stage_dir}}/{{ serv }}/protected/weblogic.jks -Djava.security.egd=file:/dev/./urandom -Dweblogic.security.SSL.protocolVersion=TLS1 -Dweblogic.DefaultProtocol=t3s"
+
+- debug: var=ARGS
+  tags: debug
+
+- name: Set EnvGroup Variables
+  shell: grep -w "envgroup:" {{syshiera}}| awk -F':' '{print $2}' | awk '{$1=$1};1'
+  register: env_group
+
+- set_fact:
+    lane: all
+  when: env_group.stdout | search("stage")
+
+- name: Execute WLST to get JVMs per Machine
+  sudo: true
+  sudo_user: "{{ oracle_user }}"
+  shell: source {{domain_home}}/{{domain_name}}/bin/setDomainEnv.sh; java {{ARGS}} weblogic.WLST -skipWLSModuleScanning {{ wlst_directory }}/getJvmPerMachine.py {{domain_home}} {{domain_name}} {{admin_listen_port}} {{wlst_directory}} {{lane}}
+  register: executed_wlst
+
+- debug: var=executed_wlst
+  tags: debug

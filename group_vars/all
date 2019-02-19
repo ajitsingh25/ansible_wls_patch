@@ -1,0 +1,93 @@
+# Here are variables related to the Weblogic Environment
+
+app_name: CS
+lane: ALL
+oracle_user: website
+oracle_group: website
+oracle_version: 12130
+patch_name: JAN2019
+patch_name_rollback: JUL2018
+rollback_psu: false
+
+# WL information
+wl_vars:
+  12130:
+    oracleBase: /x
+    oracleHome: /x/bea-wl1213
+    wlHome: /x/bea-wl1213/wlserver
+    nmPort: 6666
+    domainHome: /x/bea-wl1213/user_projects/domains
+
+  12210:
+    oracleBase: /x/gops/oracle
+    oracleHome: /x/gops/oracle/product/wl12212
+    wlHome: /x/gops/oracle/product/wl12212/wlserver
+    nmPort: 7666
+    domainHome: /x/gops/oracle/config/aserver
+
+# PSU information
+quarterly_patches:
+  12130:
+    JAN2019:
+      filename: p28710923_121300_Generic.zip
+      patchid: 28710923
+
+    JUL2018:
+      filename: p27919943_121300_Generic.zip
+      patchid: 27919943
+
+  12210:
+    JUL2018:
+      filename: p27741413_122120_Generic.zip
+      patchid: 27741413
+
+  12213:
+    JAN2019:
+      filename: p28710939_122130_Generic.zip
+      patchid: 28710939
+
+oneoff_patches:
+#  12130:
+#    - patchid: 20741228
+#      filename: p20741228_121300_Generic.zip
+
+
+##APP INFO
+app:
+  CS:
+    domain_name: frontoffice
+    serv: pegacspserv
+    admin_listen_port: 11102
+
+  GOLD:
+    domain_name: backoffice
+    serv: pegacspserv-disputes
+    admin_listen_port: 13102
+
+  GEMS:
+    domain_name: gems
+    serv: gemsserv
+    admin_listen_port: 15102
+
+  OKM:
+    domain_name: okm
+    serv: knowledgemanagerserv
+    admin_listen_port: 17102
+
+  DMS:
+    domain_name: dms
+    serv: docmanagerserv
+    admin_listen_port: 16102
+
+  SMC:
+    domain_name: smc
+    serv: smcserv
+    admin_listen_port: 14102
+
+oracle_base: "{{wl_vars[oracle_version].oracleBase}}"
+oracle_home: "{{wl_vars[oracle_version].oracleHome}}"
+domain_home: "{{wl_vars[oracle_version].domainHome}}"
+mserver_home: "{{wl_vars[oracle_version].mserverHome}}"
+wl_home: "{{wl_vars[oracle_version].wlHome}}"
+nm_listen_port: "{{wl_vars[oracle_version].nmPort}}"
+syshiera: /etc/syshiera.yaml

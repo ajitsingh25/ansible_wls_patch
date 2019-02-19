@@ -1,0 +1,22 @@
+---
+#Rollback PSU patches
+- name: Template patch list for Previous PSU
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  template:
+    src: quarterly_patch_list.j2
+    dest: "{{ oracle_stage_install }}/patch_list_{{ oracle_version }}_{{ patch_name }}_rollback.txt"
+    owner: "{{ oracle_user }}"
+    group: "{{ oracle_group }}"
+
+- name: Apply Previous PSU patches
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  shell: opatch napply -force -silent -skip_subset -skip_duplicate -phBaseFile {{ oracle_stage_install }}/patch_list_{{ oracle_version }}_{{ patch_name }}_rollback.txt
+  environment: "{{ env }}"
+  register: rollback_psu
+  async: 900 
+  poll: 120
+
+- debug: var=rollback_psu
+  tags: debug

@@ -1,0 +1,13 @@
+---
+
+- stat:
+    path: "{{oracle_home}}"
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  register: nm_stop_oracle_home_stat_result
+
+- name: Stop Node Manager Task
+  include: stop_nm.yml
+  when: nm_stop_oracle_home_stat_result.stat.exists
+  tags: stop_nm
+

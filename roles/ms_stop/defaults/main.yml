@@ -1,0 +1,9 @@
+---
+
+domain_name: "{{ app[app_name].domain_name }}"
+admin_listen_port: "{{ app[app_name].admin_listen_port }}"
+serv: "{{ app[app_name].serv }}"
+PROCESS: weblogic.NodeManager
+today: "{{ lookup('pipe', 'date +%m-%d-%y-%H:%M:%S') }}"
+oracle_stage_install: /var/tmp/patch
+wlst_directory: "{{ oracle_stage_install }}/wlst/{{domain_name}}"

@@ -1,0 +1,5 @@
+---
+- hosts: all
+
+  roles:
+     - {role: "{{playbook_dir}}/roles/ms_start",  MS_GROUP: "ungrouped", tags: ['ms_start_role']}

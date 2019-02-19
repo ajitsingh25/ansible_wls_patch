@@ -1,0 +1,20 @@
+---
+
+- hosts: all
+  gather_facts: False
+
+- include: "{{playbook_dir}}/live/ms_stop.yml"
+
+- include: "{{playbook_dir}}/live/admin_stop.yml"
+
+- include: "{{playbook_dir}}/live/nm_stop.yml"
+
+- include: "{{playbook_dir}}/live/wl_patch.yml"
+
+- include: "{{playbook_dir}}/live/nm_start.yml"
+
+- include: "{{playbook_dir}}/live/admin_start.yml"
+
+- include: "{{playbook_dir}}/live/ms_start.yml"
+
+- include: "{{playbook_dir}}/live/cleanup.yml"

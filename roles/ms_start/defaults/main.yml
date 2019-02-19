@@ -1,0 +1,25 @@
+---
+
+app:
+  CS:
+    domain_name: frontoffice
+    serv: pegacspserv
+    admin_listen_port: 11102
+
+  GOLD:
+    domain_name: backoffice
+    serv: pegacspserv-disputes
+    admin_listen_port: 13102
+
+  GEMS:
+    domain_name: gems
+    serv: gemsserv
+    admin_listen_port: 15102
+    
+domain_name: "{{ app[app_name].domain_name }}"
+admin_listen_port: "{{ app[app_name].admin_listen_port }}"
+serv: "{{ app[app_name].serv }}"
+PROCESS: weblogic.NodeManager
+today: "{{ lookup('pipe', 'date +%m-%d-%y-%H:%M:%S') }}"
+oracle_stage_install: /var/tmp/patch
+wlst_directory: "{{ oracle_stage_install }}/wlst/{{domain_name}}"

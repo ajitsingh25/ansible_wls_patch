@@ -1,0 +1,24 @@
+---
+- set_fact: 
+    stop_admin_command: "{{ domain_home }}/{{ domain_name }}/bin/stopWebLogic.sh"
+
+- name: Check if admin port is listening
+  wait_for:
+    host: "{{ansible_hostname}}"
+    port: "{{ admin_listen_port }}"
+    state: started
+    delay: 0
+    timeout: 3
+  register: port_check
+  ignore_errors: yes
+
+- debug: var=port_check
+  tags: debug
+
+- name: stop admin server
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  shell: "{{ stop_admin_command }} >> /tmp/stopWebLogic.log"
+  when: (port_check.state is defined and port_check.state|upper == "STARTED") or (port_check.failed is defined and port_check.failed|upper != "TRUE")
+  async: 300
+  poll: 15

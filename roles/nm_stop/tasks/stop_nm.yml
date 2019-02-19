@@ -1,0 +1,26 @@
+---
+
+- name: Get running processes
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  shell: "ps -ef | grep -v grep | grep -w {{ PROCESS }} | awk '{print $2}'"
+  register: running_processes
+
+#- debug: var=running_processes
+
+- debug: var=running_processes.stdout_lines
+  tags: debug
+
+- name: Kill running processes
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  shell: "kill {{ item }}"
+  with_items: "{{ running_processes.stdout_lines|default([]) }}"
+
+- wait_for:
+    path: "/proc/{{ item }}/status"
+    state: absent
+  with_items: "{{ running_processes.stdout_lines|default([]) }}"
+  ignore_errors: yes
+  register: killed_processes
+

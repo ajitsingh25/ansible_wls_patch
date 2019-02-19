@@ -1,0 +1,8 @@
+---
+# tasks file for cleanup
+- name: Clean patch Stage Directories
+  sudo: true
+  sudo_user: "{{ oracle_user }}"
+  file:
+    state: absent
+    path: "{{ oracle_stage_install }}"

@@ -1,0 +1,5 @@
+---
+- hosts: all
+
+  roles:
+     - {role: "{{playbook_dir}}/roles/admin_stop", tags: ['admin_stop_role']}

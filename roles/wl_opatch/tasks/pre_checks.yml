@@ -1,0 +1,21 @@
+---
+
+- name: fail if required variables are not defined
+  fail: msg="{{ item }} is not defined for {{ ansible_hostname }}"
+  when: "{{ item }} is not defined"
+  tags: always
+  with_items:
+    - oracle_version
+    - patch_name
+
+- name: check tmp free disk space
+  action: shell df -P /tmp | awk 'END { print $4 }'
+  register: tmpsize
+  failed_when: tmpsize.stdout|int < {{ tmp_size_gb }} * 1024 * 1024
+
+- name: check var tmp free disk space
+  action: shell df -P /var/tmp | awk 'END { print $4 }'
+  register: vartmpsize
+  failed_when: vartmpsize.stdout|int < {{ tmp_size_gb }} * 1024 * 1024
+
+

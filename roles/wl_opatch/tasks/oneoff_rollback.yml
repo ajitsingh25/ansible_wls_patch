@@ -1,0 +1,12 @@
+---
+- name: Rollback Specific One-off Patches
+  shell: "{{ oracle_home }}/OPatch/opatch rollback -silent -local -id {{ item.patchid }}"
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  with_items: "{{ oneoff_patches[oracle_version]|default([]) }}"
+  when: oneoff_patches[oracle_version] is defined
+  register: oneoff_rollback
+  ignore_errors: true
+
+- debug: var=oneoff_rollback.rc
+  tags: debug

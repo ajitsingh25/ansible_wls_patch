@@ -1,0 +1,69 @@
+---
+
+#- set_fact:
+#    lane: all
+#  when: work_env | search("stage")
+
+- name: Set StageDir Variables
+  shell: grep -w "stage:" {{syshiera}}| awk -F':' '{print $2}' | awk '{$1=$1};1'
+  register: stage_dir
+
+- debug: var=stage_dir.stdout
+  tags: debug
+
+- set_fact:
+    lane: all
+  when: stage_dir.stdout | search("stage") 
+
+- debug: var=lane
+  tags: debug
+
+- name: set StageDir Variables for stage
+  set_fact:
+    my_stage_dir: "{{ansible_hostname|upper}}"
+  when: stage_dir.stdout | search("stage")
+
+- debug: var=my_stage_dir
+  tags: debug
+
+- name: set StageDir Variables for live
+  set_fact:
+    my_stage_dir: "{{stage_dir.stdout|upper}}"
+  when: stage_dir.stdout | search("live")
+
+- debug: var=my_stage_dir
+  tags: debug
+
+- set_fact:
+    start_script: /x/web/{{my_stage_dir }}/{{ serv }}/start.sh
+#    start_script: /x/web/{{ ansible_hostname|upper }}/{{ serv }}/start.sh
+
+- debug: var=start_script
+  tags: debug
+
+- stat: path={{ wlst_directory }}/{{ansible_hostname}}_{{lane}}
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  register: f
+
+- debug: var=f.exists
+  tags: debug
+
+- name: Ensure JVM Flag is Correct
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  shell: sed -i -e "s#use_pegacspserv_scripts_to_restart_servers = false#use_pegacspserv_scripts_to_restart_servers = true#g" -e  "s/set_server_configuration_flag = true/set_server_configuration_flag = false/g" /x/web/{{my_stage_dir}}/{{ serv }}/{{ serv }}.txt
+
+- name: Set Arguments for JVMs in STAGE
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  shell: awk '{a = $1 " " a} END {print a}' {{ wlst_directory }}/{{ansible_hostname}}_{{lane}}
+  register: jvm_args
+
+- name: start managed server in STAGE
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+#  environment: "{{ authcode }}"
+  shell: "{{start_script }} {{jvm_args.stdout}}"
+  async: 2400
+  poll: 60

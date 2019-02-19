@@ -1,0 +1,7 @@
+---
+# defaults file for cleanup
+
+oracle_stage_install: /var/tmp/patch
+#oracle_stage_base: /x/home/asingh13/asingh
+oracle_stage_base: "{{playbook_dir}}/patches"
+

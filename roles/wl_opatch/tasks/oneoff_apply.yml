@@ -1,0 +1,34 @@
+---
+#Apply One-Off patches
+- name: Template one-off patch list
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  template:
+    src: patch_list.j2
+    dest: "{{ oracle_stage_install }}/patch_list.txt"
+    owner: "{{ oracle_user }}"
+    group: "{{ oracle_group }}"
+
+- name: Opatch prereq check for one-off patches
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  shell: opatch prereq CheckConflictAgainstOHWithDetail -phBaseFile {{ oracle_stage_install }}/patch_list.txt
+  environment: "{{ env }}"
+  register: conflicts_one-off
+  async: 900 
+  poll: 120
+
+- debug: var=conflicts_one-off.rc
+  tags: debug
+
+- name: Apply one-off patches
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  shell: opatch napply -force -silent -skip_subset -skip_duplicate -phBaseFile {{ oracle_stage_install }}/patch_list.txt
+  environment: "{{ env }}"
+  register: apply_one-off
+  async: 900 
+  poll: 120
+
+- debug: var=apply_one-off
+  tags: debug

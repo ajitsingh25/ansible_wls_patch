@@ -1,0 +1,11 @@
+---
+- stat:
+    path: "{{domain_home}}/{{domain_name}}"
+  register: domainCheck
+
+- name: Start Admin Server Task
+  include: start_admin.yml
+  when: ("'ADMIN' in group_names") and (domainCheck.stat.exists)
+  #when: domainCheck.stat.exists
+  tags: start_admin
+

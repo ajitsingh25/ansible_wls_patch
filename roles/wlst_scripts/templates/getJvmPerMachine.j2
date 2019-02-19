@@ -1,0 +1,109 @@
+#Conditionally import wlstModule only when script is executed with jython
+if __name__ == '__main__': 
+    from wlstModule import *#@UnusedWildImport
+
+import socket
+import os
+
+domainHome = sys.argv[1]
+domainName = sys.argv[2]
+adminPort = sys.argv[3]
+path = sys.argv[4]
+args_1 = sys.argv[5]
+
+print 'Argument List:', str(sys.argv)
+
+hostname = socket.gethostname()
+domain_location=domainHome+'/'+domainName
+userconfig=domain_location+'/userconfig/user.config'
+userkey=domain_location+'/userconfig/user.key'
+url='t3s://'+hostname+':'+adminPort
+
+if not os.path.exists(path):
+    os.makedirs(path)
+
+def connectAdm():
+    try:
+        #connect(adminUsername, adminPassword, url)
+        connect(userConfigFile=userconfig, userKeyFile=userkey, url=url)
+    except WLSTException:
+        print '[ERROR]: Trying to connect to the domain:'
+        exit()
+
+connectAdm()
+
+cd('/')
+machinesList = cmo.getMachines()
+serversList = cmo.getServers()
+dixMachine= {}
+if len(machinesList) >0:
+    for each_machine in machinesList:
+        machineName=each_machine.getName()
+        #print machineName
+        cd('/Machines/'+machineName+'/NodeManager/'+machineName)
+        machineListenAddress= cmo.getListenAddress()
+        dixMachine[machineName]= {}
+        #dixMachine[machineName]['ListenAddress'] = machineListenAddress
+        dixMachine[machineName]['Servers'] = []
+        
+if len(serversList) >0:
+    for each_server in serversList:
+        svrName=each_server.getName()
+        machineMbean = each_server.getMachine()
+        if not machineMbean is None:
+            machineName=machineMbean.getName()
+            if svrName not in dixMachine[machineName]['Servers']:
+                dixMachine[machineName]['Servers'].append(svrName)
+
+
+All_Server_List=[]               
+if len(serversList) >0:
+    for each_server in serversList:
+        svrName=each_server.getName()
+        machineMbean = each_server.getMachine()
+        if not machineMbean is None and svrName not in All_Server_List:
+            All_Server_List.append(svrName)
+
+def all():
+    file_name=path+'/'+hostname+'_'+args_1
+    f = open(file_name, 'w')
+    for each_item in All_Server_List:
+        f.write("%s\n" % each_item)
+        
+def node_all():
+    for k,v in dixMachine.iteritems():
+        #print k
+        file_name=path+'/'+k+'_'+args_1
+        f = open(file_name, 'w')
+        for vk, vv in v.iteritems():
+            #print vv
+            for each_item in vv:
+                f.write("%s\n" % each_item)
+
+def node_lane():
+    for k,v in dixMachine.iteritems():
+        #print k
+        file_name=path+'/'+k+'_'+args_1
+        f = open(file_name, 'w')
+        for vk, vv in v.iteritems():
+            #print vv
+            for each_item in vv:
+                if each_item.find(args_1)!=-1:
+                    #print each_item
+                    f.write("%s\n" % each_item)
+                    
+if args_1.upper() == "ALL":
+    all()
+
+if args_1.upper() == "NODE_ALL":
+    node_all()
+    
+if args_1.upper() == "L1":
+    node_lane()
+    
+if args_1.upper() == "L2":
+    node_lane()
+
+if args_1 =="":
+    sys.exit("args1 is empty")
+            

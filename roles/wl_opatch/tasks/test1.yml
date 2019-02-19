@@ -1,0 +1,36 @@
+---
+
+- name: Create Patch directory
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  file:
+    path: "{{ patch_directory }}"
+    state: directory
+    owner: "{{ oracle_user }}"
+    group: "{{ oracle_group }}"
+
+- name: Extract PSU and One-off patches
+  include: extract_files.yml
+  when: not rollback_psu
+  when: (quarterly_patches[oracle_version]) is defined or (oneoff_patches[oracle_version]) is defined
+
+- name: Template patch list
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  template:
+    src: quarterly_patch_list.j2
+    dest: "{{ oracle_stage_install }}/patch_list_{{ oracle_version }}_{{ patch_name }}.txt"
+    owner: "{{ oracle_user }}"
+    group: "{{ oracle_group }}"
+
+- name: Opatch prereq check for PSU patches
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  shell: opatch prereq CheckConflictAgainstOHWithDetail -phBaseFile {{ oracle_stage_install }}/patch_list_{{ oracle_version }}_{{ patch_name }}.txt
+  environment: "{{ env }}"
+  register: conflicts_psu
+  when: (quarterly_patches[oracle_version]) is defined
+  async: 900
+  poll: 20
+
+- debug: var=conflicts_psu

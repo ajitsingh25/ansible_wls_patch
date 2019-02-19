@@ -1,0 +1,13 @@
+---
+
+- name: Rollback Specific PSU Patches
+  shell: "{{ oracle_home }}/OPatch/opatch rollback -silent -local -id {{ quarterly_patches[oracle_version][patch_name].patchid }}"
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  register: previous_psu_rollback
+  async: 900 
+  poll: 60
+  ignore_errors: yes
+
+- debug: var=previous_psu_rollback
+  tags: debug

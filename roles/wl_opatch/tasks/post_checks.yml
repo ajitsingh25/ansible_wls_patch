@@ -1,0 +1,12 @@
+---
+
+- name: Check which WL patches are applied
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  shell: opatch lspatches | grep ';'| cut -d';' -f1
+  environment: "{{ env }}"
+  register: applied_patches
+
+- debug: var=applied_patches.stdout_lines
+
+

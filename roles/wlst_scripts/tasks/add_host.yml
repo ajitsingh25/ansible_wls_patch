@@ -1,0 +1,49 @@
+---
+- hosts: all
+
+  vars:
+    domain_home: /x/bea-wl1213/user_projects/domains
+    domain_name: frontoffice
+
+  tasks:
+  - set_fact:
+      config_xml: "{{ domain_home }}/{{ domain_name }}/config/config.xml"
+
+  - name: Find AdminServer name
+    sudo: true
+    sudo_user: "{{oracle_user}}"
+    shell: sed -n '/<server>/,\#</server>#{/<name>/p}' {{config_xml}} | sed -n '2p' | sed 's#</name>##;s/<name>//'| sed -e 's/^[ \t]*//'
+    register: admin_name
+
+  - debug: var=admin_name.stdout
+
+  - set_fact:
+      ConsolePreferences_xml: "{{ domain_home }}/{{ domain_name }}/servers/{{ admin_name.stdout }}/data/console/ConsolePreferences.xml"
+
+  - stat:
+      path: "{{ConsolePreferences_xml}}"
+    register: stat_result
+
+  - debug: var=config_xml
+  - debug: var=ConsolePreferences_xml
+
+  - name: Ping Admin
+    shell: date
+    when: stat_result.stat.exists
+
+#  - name: Get Machine list from config.xml
+#    shell: grep -i "<machine>" {{ config_xml }} | awk -F\> '{print $2}' | awk -F\< '{print $1}' | sort | uniq
+#    register: node_list
+#    when: stat_result.stat.exists
+
+#  - debug: var=node_list.stdout_lines
+
+#  - add_host: name={{ item }} groups=grp1
+#    with_items: "{{ node_list.stdout_lines }}"
+#    when: (stat_result.stat.exists) and (item != "{{ ansible_hostname }}" and item|length >  1)
+#    ignore_errors: yes
+
+#- hosts: grp1
+#  gather_facts: False
+#  tasks:
+#    - ping:

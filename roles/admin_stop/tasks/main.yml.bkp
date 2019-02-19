@@ -1,0 +1,14 @@
+---
+
+- stat:
+    path: "{{domain_home}}/{{domain_name}}"
+  register: domainCheck
+
+#- debug: var=domainCheck.stat
+
+- name: Stop Admin Server Task
+  include: stop_admin.yml
+  when: ("'ADMIN' in group_names") and (domainCheck.stat.exists)
+  #when: (domainCheck.stat.exists) and ("'*ADMIN' in group_names")
+  tags: stop_admin
+

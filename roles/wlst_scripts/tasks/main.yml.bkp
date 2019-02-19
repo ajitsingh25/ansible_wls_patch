@@ -1,0 +1,24 @@
+---
+
+#- set_fact: 
+#    domainExists: "{{domain_home}}/{{domain_name}}"
+
+- stat:
+    path: "{{domain_home}}/{{domain_name}}"
+  register: domainCheck
+
+- debug: var=domainCheck.stat.exists
+
+- name: Call the 'wl_start' role to start NM to control MS Servers
+  include: ../../wl_start/tasks/start_nm.yml
+  when: domainCheck.stat.exists
+
+- name: Call the 'wl_start' role to start admin to run WLST script
+  include: ../../wl_start/tasks/start_admin.yml
+  when: domainCheck.stat.exists
+
+- name: Execute WLST Task
+  include: execute_wlst.yml
+  when: domainCheck.stat.exists
+  tags: wlst
+

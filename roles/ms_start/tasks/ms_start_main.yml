@@ -1,0 +1,58 @@
+---
+
+- set_fact:
+    config_xml: "{{ domain_home }}/{{ domain_name }}/config/config.xml"
+
+- name: Find AdminServer name
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  shell: sed -n '/<server>/,\#</server>#{/<name>/p}' {{config_xml}} | sed -n '2p' | sed 's#</name>##;s/<name>//'| sed -e 's/^[ \t]*//'
+  register: admin_name
+
+- debug: var=admin_name.stdout
+  tags: debug
+
+- set_fact:
+      ConsolePreferences_xml: "{{ domain_home }}/{{ domain_name }}/servers/{{ admin_name.stdout }}/data/console/ConsolePreferences.xml"
+
+- stat:
+    path: "{{ConsolePreferences_xml}}"
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  register: stat_result
+
+- debug: var=config_xml
+  tags: debug
+
+- debug: var=ConsolePreferences_xml
+  tags: debug
+
+- stat:
+    path: "{{domain_home}}/{{domain_name}}"
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  register: domainCheck
+
+- debug: var=domainCheck.stat
+  tags: debug
+
+- name: Get ConsolePreferences lines count
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  shell: cat {{ ConsolePreferences_xml }} | wc -l
+  register: ConsolePreferences_xml_count
+  when: stat_result.stat.exists
+
+- debug: var=ConsolePreferences_xml_count.stdout
+  tags: debug
+
+- debug:
+    msg: "Count is {{ConsolePreferences_xml_count.stdout}}"
+  when: (stat_result.stat.exists) and (ConsolePreferences_xml_count.stdout | int > 10)
+  tags: debug
+
+- name: Start Stage Managed Server Task
+  include: stage_start_ms.yml
+  when: (stat_result.stat.exists) and (domainCheck.stat.exists) and (ConsolePreferences_xml_count.stdout | int > 10)
+#  when: (stat_result.stat.exists) and (domainCheck.stat.exists)
+  tags: start_ms

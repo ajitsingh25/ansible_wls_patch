@@ -1,0 +1,41 @@
+---
+
+- debug: var=wl_home
+
+- set_fact:
+    pega_log_home: /x/web/gops/{{domain_name}}/logs
+
+- set_fact: 
+    start_nm_command: "nohup {{ wl_home }}/server/bin/startNodeManager.sh > {{ pega_log_home }}/nodemgr_{{ today }}.log &"
+
+- debug: var=start_nm_command
+  tags: debug
+
+- name: Check if NM port is listening
+  wait_for:
+    host: "{{ansible_hostname}}"
+    port: "{{ nm_listen_port }}"
+    delay: 0
+    timeout: 3
+  register: port_check
+  ignore_errors: yes
+
+- debug: var=port_check
+  tags: debug
+
+- name: start NM
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  shell: "{{start_nm_command}}" 
+  when: (port_check.failed is defined and port_check.failed|upper == "TRUE") or (port_check.state is defined and port_check.state|upper != "STARTED")
+  environment: "{{ env }}"
+  register: nm_result
+
+- debug: var=nm_result
+  tags: debug
+
+- wait_for:
+    host: "{{ansible_hostname}}"
+    port: "{{nm_listen_port}}"
+    timeout: 50
+    

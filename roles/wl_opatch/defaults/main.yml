@@ -1,0 +1,15 @@
+---
+
+tmp_size_gb: 1
+var_tmp_size_gb: 1
+oracle_stage_install: /var/tmp/patch
+#oracle_stage_base: /x/home/asingh13/asingh
+oracle_stage_base: "{{playbook_dir}}/../patches"
+patch_directory: "{{ oracle_stage_install }}/{{ oracle_version }}/{{ patch_name }}"
+#rollback_psu: false # set to true if rolling back current PSU.
+
+env:
+  ORACLE_HOME: "{{ oracle_home }}"
+  ORACLE_BASE: "{{ oracle_base }}"
+  PATH: "{{ oracle_home }}/OPatch:$PATH:/bin:/usr/bin"
+

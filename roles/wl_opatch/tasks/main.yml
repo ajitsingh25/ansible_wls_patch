@@ -1,0 +1,99 @@
+---
+- stat:
+    path: "{{oracle_home}}"
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  register: ohCheck
+
+- name: Rollback Current PSU Patch
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  include: psu_rollback_1.yml
+  when: rollback_psu and (quarterly_patches[oracle_version]) is defined
+  tags: psu_rollback
+
+- set_fact:
+    patch_name: "{{ patch_name_rollback }}"
+  when: rollback_psu
+
+- name: Check if Oracle_Home Exists
+  fail: msg="{{oracle_home}} doesn't exits on {{ansible_hostname}}"
+  when: not ohCheck.stat.exists
+
+- debug: var=patch_name
+  tags: debug
+
+- name: Run pre-check tasks
+  include: pre_checks.yml
+  tags: pre_checks
+  when: (quarterly_patches[oracle_version]) is defined or (oneoff_patches[oracle_version]) is defined 
+
+- name: Check PSU patches if already applied
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  shell: opatch lspatches | grep ';'| cut -d';' -f1 | grep {{ quarterly_patches[oracle_version][patch_name].patchid }}
+  environment: "{{ env }}"
+  register: psu_applied_patch
+  when: not rollback_psu and (quarterly_patches[oracle_version]) is defined
+  ignore_errors: yes
+  async: 900
+  poll: 30
+
+- debug: var=psu_applied_patch.stdout
+
+- name: Extract PSU and One-off patches
+  include: extract_files.yml
+  when: not rollback_psu
+  tags: extract_files
+  when: (quarterly_patches[oracle_version]) is defined or (oneoff_patches[oracle_version]) is defined
+  
+- name: Apply Quarterly Patch
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  include: psu_apply.yml
+  when: psu_applied_patch.stdout == "" and not rollback_psu and (quarterly_patches[oracle_version]) is defined
+  tags: psu_apply
+
+- name: Apply One-off Patch
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  include: oneoff_apply.yml
+  when: not rollback_psu and (oneoff_patches[oracle_version]) is defined
+  tags: oneoff_apply
+  
+- name: Rollback One-Off Patch
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  include: oneoff_rollback.yml
+  when: rollback_psu and (oneoff_patches[oracle_version]) is defined
+  tags: oneoff_rollback
+
+- name: Apply Previous PSU Patch
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  include: psu_rollback.yml
+#  when: (quarterly_patches[oracle_version]) is defined
+  when: rollback_psu and (quarterly_patches[oracle_version]) is defined
+  tags: psu_rollback
+
+#- name: Opatch lsinventory
+#  sudo: true
+#  sudo_user: "{{oracle_user}}"
+#  shell: "{{ oracle_home }}/OPatch/opatch lsinventory -oh {{ oracle_home }}"
+#  register: lsinv_post
+#  when: (quarterly_patches[oracle_version]) is defined or (oneoff_patches[oracle_version]) is defined
+#  tags: lsinv
+
+#- debug: var=lsinv_post.results
+
+- name: Applied Patch[s] Output
+  sudo: true
+  sudo_user: "{{oracle_user}}"
+  include: post_checks.yml
+  tags: list_patch
+
+#- name: Conflict Check
+#  sudo: true
+#  sudo_user: "{{oracle_user}}"
+#  include: test1.yml
+#  tags: ConflictCheck, debug
