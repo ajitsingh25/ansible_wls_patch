@@ -1,3 +1,6 @@
+Please visit below repo for updated version with ansible2 and without roles. This is simpler than the current one.
+https://github.com/ajitsingh25/weblogic-patching
+
 
 1) Global Variables:
 filename: <playbook_dir>/group_vars/all
